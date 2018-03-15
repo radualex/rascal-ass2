@@ -15,7 +15,7 @@
 	return false;
  }
  
- public boolean removeUser(int userCode) {
+ public boolean removeUser(String userCode) {
 	User user = (User)users.get(new Integer(userCode));
 	if (user == null || user.numberOfLoans() > 0) return false;
 	users.remove(new Integer(userCode));
