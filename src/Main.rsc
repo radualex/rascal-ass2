@@ -11,15 +11,17 @@ import analysis::m3::Core;
 import analysis::m3::AST;
 import lang::java::jdt::m3::AST;
 import lang::java::jdt::m3::Core;
+import util::Benchmark;
 
 public M3 projectM3;
 public FlowProgram projectProgram;
 public OFG programOfg;
 public map[str, str] Extends = ();
-public set[tuple[loc, str, str]] Suggestions = {};
+public set[tuple[loc, str, str, str]] Suggestions = {};
 
 void main()
 {
+	int startTime = realTime();
 	loc exampleProject = |project://Assignment2/src/javaFiles|;
 	CreateM3AndOFG(exampleProject);	
 	
@@ -28,28 +30,22 @@ void main()
 	OFG classes = GetOFGClassDependency();
 	OFG interfaces = GetOFGInterfaceDependency();
 	CreateSuggestions(classes, interfaces);
-	for(s <- Suggestions)
-	{
-		println(s);
-	}
-	//Get first type for Map
-	//Get types for methods
+	DisplaySuggestions(Suggestions);
 	
-	//println(Extends["Book"]);
-	//for(e <- Extends)
+	real totalTime = (realTime() - startTime) / 1000.0;
+	println("Total time is: <totalTime> seconds");
+	
+	
+	//OFG returnTypes = {pair | pair <- programOfg, contains(pair[1].path, "Map") || contains(pair[0].path, "Map")};
+	//OFG maps = {};
+	//for(e <- returnTypes)
 	//{
-	//	println(e);
+	//	maps += propagate(programOfg, {e}, {}, false);
 	//}
-	//for(e <- classes)
+	//for(r <- maps)
 	//{
-	//	println(e);
-	//}	
-	//
-	//println();
-	//for(e <- interfaces)
-	//{
-	//	println(e);
-	//}	
+	//	println(r);
+	//}
 }
 
 void CreateM3AndOFG(loc projectLoc)
@@ -113,16 +109,14 @@ map[str, str] GetPrimitiveTypes(M3 m3)
 
 void CreateSuggestions(OFG classDependency, OFG interfaceDependency)
 {
+	//Get suggestions for variables and fields
 	for(e <- interfaceDependency)
 	{
 		for(f <- classDependency)
 		{
 			if(f[0] == e[0])
-			{
-				//println(f[0]);
-				//println(f[1]); //type
-				//println(e[1]); //interface (Map, list, etc)
-				//println();
+			{				
+				//Get superType
 				str currentType = f[1].file;
 				if(f[1].file in Extends)
 				{
@@ -132,19 +126,62 @@ void CreateSuggestions(OFG classDependency, OFG interfaceDependency)
 				if(f[0].scheme != "java+method")
 				{				
 					if(e[1].file != "Map")
-					{						
-						Suggestions = Suggestions + {<f[0], e[1].file, "<e[1].file>\<<currentType>\>">};
+					{											
+						Suggestions = Suggestions + {<f[0], e[1].file, "<currentType>", "<e[1].file>\<<currentType>\>">};
 					}
 					else
 					{
-						Suggestions = Suggestions + {<f[0], e[1].file, "<e[1].file>\<Unknown,<currentType>\>">};
+						Suggestions = Suggestions + {<f[0], e[1].file, "<currentType>" ,"<e[1].file>\<-,<currentType>\>">};
 					}
-				}
-				else
-				{
-					println(f[0]);
 				}
 			}
 		}
+	}
+	
+	//Get suggestions for methods
+	for(e <- interfaceDependency)
+	{
+		for(f <- classDependency)
+		{
+			if(f[0] == e[0])
+			{
+				if(f[0].scheme == "java+method")
+				{	
+					list[str] lines = readFileLines(f[0]);
+					str firstLine = lines[0];
+
+					if(contains(firstLine, "List") || contains(firstLine, "Map") || contains(firstLine, "Iterator") || contains(firstLine, "Collection"))
+					{
+						for(s <- Suggestions)
+						{
+							if(contains(s[0].path, f[0].path))
+							{
+								if(contains(firstLine, s[1]))
+								{
+									str currentType = s[2];
+									if(currentType != "Map")
+									{
+										Suggestions = Suggestions + {<f[0], s[1], "<currentType>" ,"<s[1]>\<<currentType>\>">};
+									}
+									else
+									{
+										Suggestions = Suggestions + {<f[0], s[1], "<currentType>" ,"<s[1]>\<-, <currentType>\>">};
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void DisplaySuggestions(set[tuple[loc, str, str, str]] suggestions)
+{
+	println("We have found <size(suggestions)> suggestions");
+	for(s <- suggestions)
+	{
+		println("At location <s[0].path>, the type <s[1]> should be replaced with <s[3]>."); 
 	}
 }
