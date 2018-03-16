@@ -33,24 +33,10 @@ void main(loc projectLocation)
 	OFG classes = GetOFGClassDependency(projectM3, programOfg);
 	OFG interfaces = GetOFGInterfaceDependency(projectM3);
 	Suggestions = CreateSuggestions(classes, interfaces, Extends);
-	DisplaySuggestions(Suggestions);
-	
-	
+	DisplaySuggestions(Suggestions);	
 	
 	real totalTime = (realTime() - startTime) / 1000.0;
 	println("Total time is: <totalTime> seconds");
-	
-	
-	//OFG returnTypes = {pair | pair <- programOfg, pair[0].scheme == "java+parameter" && contains(pair[0].path, "List")};
-	//OFG maps = {};
-	//for(e <- returnTypes)
-	//{
-	//	maps += propagate(programOfg, {e}, {}, false);
-	//}
-	//for(r <- returnTypes)
-	//{
-	//	println(r);
-	//}
 }
 
 void CreateM3AndOFG(loc projectLoc)

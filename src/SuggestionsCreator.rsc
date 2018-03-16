@@ -9,28 +9,28 @@ set[tuple[loc, str, str, str]] CreateSuggestions(OFG classDependency, OFG interf
 {
 	set[tuple[loc, str, str, str]] suggestions = {};
 	//Get suggestions for variables and fields
-	for(e <- interfaceDependency)
+	for(iD <- interfaceDependency)
 	{
-		for(f <- classDependency)
+		for(cD <- classDependency)
 		{
-			if(f[0] == e[0])
+			if(cD[0] == iD[0])
 			{				
 				//Get superType
-				str currentType = f[1].file;
-				if(f[1].file in extends)
+				str currentType = cD[1].file;
+				if(currentType in extends)
 				{
-					currentType = extends[f[1].file];
+					currentType = extends[currentType];
 				}
 				
-				if(f[0].scheme != "java+method")
+				if(cD[0].scheme != "java+method")
 				{				
-					if(e[1].file != "Map")
+					if(iD[1].file != "Map")
 					{											
-						suggestions = suggestions + {<f[0], e[1].file, "<currentType>", "<e[1].file>\<<currentType>\>">};
+						suggestions = suggestions + {<cD[0], iD[1].file, "<currentType>", "<iD[1].file>\<<currentType>\>">};
 					}
 					else
 					{
-						suggestions = suggestions + {<f[0], e[1].file, "<currentType>" ,"<e[1].file>\<-,<currentType>\>">};
+						suggestions = suggestions + {<cD[0], iD[1].file, "<currentType>" ,"<iD[1].file>\<-,<currentType>\>">};
 					}
 				}
 			}
@@ -38,33 +38,35 @@ set[tuple[loc, str, str, str]] CreateSuggestions(OFG classDependency, OFG interf
 	}
 	
 	//Get suggestions for methods
-	for(e <- interfaceDependency)
+	for(iD <- interfaceDependency)
 	{
-		for(f <- classDependency)
+		for(cD <- classDependency)
 		{
-			if(f[0] == e[0])
+			if(cD[0] == iD[0])
 			{
-				if(f[0].scheme == "java+method")
+				if(cD[0].scheme == "java+method")
 				{	
-					list[str] lines = readFileLines(f[0]);
+					list[str] lines = readFileLines(cD[0]);
 					str firstLine = lines[0];
 
 					if(contains(firstLine, "List") || contains(firstLine, "Map") || contains(firstLine, "Iterator") || contains(firstLine, "Collection"))
 					{
 						for(s <- suggestions)
 						{
-							if(contains(s[0].path, f[0].path))
+							if(contains(s[0].path, cD[0].path))
 							{
-								if(contains(firstLine, s[1]))
+								
+								list[str] splitFirstLine = split(" ", firstLine); //get return type (assumption 3)
+								if(splitFirstLine[1] == s[1])
 								{
 									str currentType = s[2];
 									if(currentType != "Map")
 									{
-										suggestions = suggestions + {<f[0], s[1], "<currentType>" ,"<s[1]>\<<currentType>\>">};
+										suggestions = suggestions + {<cD[0], s[1], "<currentType>" ,"<s[1]>\<<currentType>\>">};
 									}
 									else
 									{
-										suggestions = suggestions + {<f[0], s[1], "<currentType>" ,"<s[1]>\<-, <currentType>\>">};
+										suggestions = suggestions + {<cD[0], s[1], "<currentType>" ,"<s[1]>\<-, <currentType>\>">};
 									}
 								}
 							}
